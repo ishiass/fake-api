@@ -1,0 +1,1151 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GPT 6.7 Demo API</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --panel-soft: #eef4f6;
+      --text: #14202b;
+      --muted: #647383;
+      --line: #d9e0e6;
+      --blue: #2563eb;
+      --teal: #0f9f8f;
+      --amber: #d97706;
+      --rose: #e11d48;
+      --ink: #0f172a;
+      --shadow: 0 18px 55px rgba(31, 42, 68, .10);
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        linear-gradient(rgba(20, 32, 43, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20, 32, 43, .045) 1px, transparent 1px),
+        linear-gradient(120deg, rgba(37, 99, 235, .10), transparent 34%),
+        linear-gradient(200deg, rgba(15, 159, 143, .12), transparent 40%),
+        var(--bg);
+      background-size: 32px 32px, 32px 32px, auto, auto, auto;
+      color: var(--text);
+    }
+
+    button, textarea, input {
+      font: inherit;
+    }
+
+    .shell {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 26px 0 40px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius);
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--blue), var(--teal));
+      box-shadow: 0 10px 30px rgba(37, 99, 235, .25);
+      flex: 0 0 auto;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    h1 {
+      font-size: 22px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, .88);
+      border: 1px solid rgba(217, 224, 230, .88);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 24px;
+      min-height: 286px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+      align-items: center;
+      gap: 22px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero:after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--blue), var(--teal), var(--amber));
+    }
+
+    .hero h2 {
+      font-size: clamp(30px, 5vw, 48px);
+      line-height: 1;
+      max-width: 780px;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 720px;
+      margin-top: 16px;
+    }
+
+    .hero-main {
+      min-width: 0;
+    }
+
+    .hero-main .endpoint {
+      margin-top: 24px;
+    }
+
+    .hero-visual {
+      border: 1px solid rgba(217, 224, 230, .92);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, #ffffff, #f3f7fa);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, .12);
+      overflow: hidden;
+      min-height: 218px;
+    }
+
+    .visual-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 13px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .86);
+    }
+
+    .traffic {
+      display: flex;
+      gap: 6px;
+    }
+
+    .traffic span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .traffic span:nth-child(1) { background: #ef4444; }
+    .traffic span:nth-child(2) { background: #f59e0b; }
+    .traffic span:nth-child(3) { background: #10b981; }
+
+    .visual-title {
+      color: var(--muted);
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      white-space: nowrap;
+    }
+
+    .visual-body {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .protocol-row {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      min-height: 38px;
+    }
+
+    .protocol-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .protocol-value {
+      border: 1px solid #dbe4ec;
+      background: #fff;
+      border-radius: var(--radius);
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      padding: 0 11px;
+      color: #14202b;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .response-preview {
+      border: 1px solid #243247;
+      background: #0f172a;
+      border-radius: var(--radius);
+      padding: 13px;
+      color: #c7d2fe;
+      min-height: 96px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.55;
+      overflow: hidden;
+    }
+
+    .response-preview .green { color: #86efac; }
+    .response-preview .blue { color: #93c5fd; }
+    .response-preview .amber { color: #fbbf24; }
+
+    .feature-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 18px;
+    }
+
+    .feature-pill {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .78);
+      color: #31505f;
+      border-radius: var(--radius);
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 10px;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .feature-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--teal);
+      box-shadow: 0 0 0 3px rgba(15, 159, 143, .13);
+    }
+
+    .endpoint {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .codebox {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: #f9fbfc;
+      border-radius: var(--radius);
+      padding: 12px 13px;
+      color: #111827;
+      overflow: auto;
+      white-space: nowrap;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+    }
+
+    .button {
+      border: 0;
+      background: var(--ink);
+      color: #fff;
+      border-radius: var(--radius);
+      min-height: 42px;
+      padding: 0 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+      white-space: nowrap;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 25px rgba(15, 23, 42, .16);
+    }
+
+    .button.secondary {
+      background: #eef2f7;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .button.teal { background: var(--teal); }
+    .button.blue { background: var(--blue); }
+
+    .button svg {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 auto;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      padding: 18px;
+      border-radius: var(--radius);
+    }
+
+    .card h3 {
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      background: #f7fafc;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 13px;
+      min-height: 86px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric .value {
+      margin-top: 9px;
+      font-size: 26px;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .key-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+      min-height: 18px;
+    }
+
+    .access-list {
+      display: grid;
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .access-row {
+      display: grid;
+      grid-template-columns: 82px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      min-height: 32px;
+      border-top: 1px solid #edf1f5;
+      padding-top: 8px;
+    }
+
+    .access-name {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .access-value {
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 650;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tester {
+      display: grid;
+      gap: 12px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 118px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfcfe;
+      padding: 13px;
+      outline: none;
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    textarea:focus, input:focus {
+      border-color: rgba(37, 99, 235, .65);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+
+    .tester-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .sample-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .sample-chip {
+      border: 1px solid var(--line);
+      background: #f7fafc;
+      color: #243247;
+      border-radius: var(--radius);
+      min-height: 30px;
+      padding: 0 10px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .sample-chip:hover {
+      border-color: rgba(37, 99, 235, .45);
+      background: #eef5ff;
+    }
+
+    .result {
+      min-height: 126px;
+      max-height: 360px;
+      overflow: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: #0f172a;
+      color: #dbeafe;
+      padding: 14px;
+      line-height: 1.55;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+
+    .admin {
+      margin-top: 18px;
+      display: none;
+    }
+
+    .admin.visible {
+      display: block;
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 18px;
+    }
+
+    .span-8 { grid-column: span 8; }
+    .span-4 { grid-column: span 4; }
+    .span-6 { grid-column: span 6; }
+    .span-12 { grid-column: span 12; }
+
+    .chart-card {
+      padding: 18px;
+      min-height: 312px;
+    }
+
+    .chart-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .chart-head h3 { margin: 0; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 0 9px;
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+      color: #31505f;
+      font-size: 12px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 238px;
+      display: block;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 22px 0;
+    }
+
+    @media (max-width: 900px) {
+      .layout, .admin-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .span-8, .span-4, .span-6, .span-12 {
+        grid-column: span 1;
+      }
+
+      .endpoint, .key-row {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+      }
+
+      .hero {
+        padding: 20px;
+      }
+
+      .hero-visual {
+        min-height: 204px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .shell {
+        width: min(100vw - 22px, 1180px);
+        padding-top: 16px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h2 {
+        font-size: 34px;
+      }
+
+      .tester-actions {
+        align-items: stretch;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .protocol-row, .access-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">CS</div>
+        <div>
+          <h1>GPT 6.7 Demo</h1>
+          <p class="sub">OpenAI compatible API</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="layout">
+      <div class="panel hero">
+        <div class="hero-main">
+          <h2>gpt 6.7 调用站</h2>
+          <p>OpenAI兼容格式。</p>
+          <div class="endpoint">
+            <div class="codebox" id="publicEndpoint">未配置 API 地址</div>
+            <button class="button secondary" id="copyEndpoint" type="button" title="复制调用地址">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><rect x="2" y="2" width="13" height="13" rx="2"/></svg>
+              复制
+            </button>
+          </div>
+          <div class="feature-strip" aria-label="接口能力">
+            <span class="feature-pill"><span class="feature-dot"></span>gpt 6.7</span>
+          </div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="visual-head">
+            <div class="traffic"><span></span><span></span><span></span></div>
+            <div class="visual-title">POST /v1/chat/completions</div>
+          </div>
+          <div class="visual-body">
+            <div class="protocol-row">
+              <div class="protocol-label">model</div>
+              <div class="protocol-value">gpt 6.7</div>
+            </div>
+            <div class="protocol-row">
+              <div class="protocol-label">status</div>
+              <div class="protocol-value">200 OK · OpenAI compatible</div>
+            </div>
+            <div class="response-preview">
+<span class="green">{</span>
+  <span class="blue">"object"</span>: <span class="amber">"chat.completion"</span>,
+  <span class="blue">"model"</span>: <span class="amber">"gpt 6.7"</span>,
+  <span class="blue">"finish_reason"</span>: <span class="amber">"stop"</span>
+<span class="green">}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="stack">
+        <section class="panel card">
+          <h3>调用密钥</h3>
+          <div class="key-row">
+            <div class="codebox" id="apiKeyBox">等待领取</div>
+            <button class="button teal" id="getKey" type="button" title="领取随机密钥">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 2l-2 2m-7.6 7.6a5 5 0 1 1-2.8-2.8A5 5 0 0 1 11.4 11.6z"/><path d="M11.4 11.6L22 1"/></svg>
+              领取
+            </button>
+          </div>
+          <div class="status" id="keyStatus">仅授权页面可领取密钥。</div>
+          <div class="access-list">
+            <div class="access-row">
+              <div class="access-name">公开地址</div>
+              <div class="access-value" id="accessApiHost">未配置</div>
+            </div>
+            <div class="access-row">
+              <div class="access-name">接口格式</div>
+              <div class="access-value">OpenAI 兼容格式</div>
+            </div>
+          </div>
+        </section>
+
+      </aside>
+    </section>
+
+    <section class="admin" id="adminPanel">
+      <div class="admin-grid">
+        <section class="panel card span-12">
+          <div class="chart-head">
+            <div>
+              <h3>管理员控制台</h3>
+              <p class="sub">统计数据来自Worker运行时内存，实例重启后会重新累计。</p>
+            </div>
+            <button class="button secondary" id="refreshStats" type="button" title="刷新统计">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v7h-7"/></svg>
+              刷新
+            </button>
+          </div>
+          <div class="metric-grid">
+            <div class="metric"><div class="label">总请求</div><div class="value" id="mTotal">0</div></div>
+            <div class="metric"><div class="label">Chat请求</div><div class="value" id="mChat">0</div></div>
+            <div class="metric"><div class="label">已发密钥</div><div class="value" id="mKeys">0</div></div>
+            <div class="metric"><div class="label">平均延迟</div><div class="value" id="mLatency">0ms</div></div>
+          </div>
+        </section>
+
+        <section class="panel chart-card span-8">
+          <div class="chart-head">
+            <h3>7日请求趋势</h3>
+            <span class="badge" id="trendBadge">requests</span>
+          </div>
+          <canvas id="trendChart" width="900" height="320"></canvas>
+        </section>
+
+        <section class="panel chart-card span-4">
+          <div class="chart-head">
+            <h3>意图命中</h3>
+            <span class="badge">intent</span>
+          </div>
+          <canvas id="intentChart" width="520" height="320"></canvas>
+        </section>
+
+        <section class="panel chart-card span-6">
+          <div class="chart-head">
+            <h3>模型分布</h3>
+            <span class="badge">model</span>
+          </div>
+          <canvas id="modelChart" width="640" height="320"></canvas>
+        </section>
+
+        <section class="panel card span-6">
+          <h3>管理员测试页面</h3>
+          <div class="tester">
+            <textarea id="adminPromptInput" placeholder="管理员测试输入，例如：翻译 bot man"></textarea>
+            <div class="sample-row" aria-label="测试示例">
+              <button class="sample-chip" type="button" data-prompt="你是什么模型？">模型身份</button>
+              <button class="sample-chip" type="button" data-prompt="翻译 bot man api server">翻译测试</button>
+              <button class="sample-chip" type="button" data-prompt="怎么调用这个接口">调用方式</button>
+              <button class="sample-chip" type="button" data-prompt="统计图有什么">统计问题</button>
+            </div>
+            <div class="tester-actions">
+              <span class="hint">Enter 发送，Shift + Enter 换行</span>
+              <button class="button blue" id="adminSendPrompt" type="button" title="发送管理员测试">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                发送
+              </button>
+            </div>
+            <div class="result" id="adminResultBox">管理员测试结果会显示在这里。</div>
+          </div>
+        </section>
+
+        <section class="panel card span-12">
+          <h3>最近请求</h3>
+          <div id="recentTable" class="empty">暂无请求记录</div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const FRONTEND_CONFIG = {
+      FRONTEND_BASE: "",
+      USE_DEFAULT_BACKEND: true,
+      DEFAULT_BACKEND_BASE: "https://api.circleestops.ccwu.cc",
+      BACKEND_BASE: "",
+      PUBLIC_ENDPOINT: "",
+      ADMIN_LOGIN_PATH: "/login?!=pass==admin",
+      ADMIN_TOKEN: "admin",
+      MODEL_VENDOR: "0penAI",
+      MODEL_NAME: "gpt 6.7",
+      DEMO_API_ENDPOINT: "https://api.circleestops.ccwu.cc/v1/chat/completions",
+    };
+
+    const HIDDEN_WORKER_BASE = FRONTEND_CONFIG.USE_DEFAULT_BACKEND
+      ? FRONTEND_CONFIG.DEFAULT_BACKEND_BASE
+      : FRONTEND_CONFIG.BACKEND_BASE;
+    const PUBLIC_ENDPOINT = FRONTEND_CONFIG.PUBLIC_ENDPOINT || (HIDDEN_WORKER_BASE ? `${HIDDEN_WORKER_BASE}/v1/chat/completions` : "");
+    const ADMIN_TOKEN = FRONTEND_CONFIG.ADMIN_TOKEN;
+    const MODEL_NAME = FRONTEND_CONFIG.MODEL_NAME;
+    const isAdmin = `${location.pathname}${location.search}` === FRONTEND_CONFIG.ADMIN_LOGIN_PATH;
+
+    const state = {
+      apiKey: "",
+      stats: null,
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    $("publicEndpoint").textContent = PUBLIC_ENDPOINT || "未配置 API 地址";
+    $("accessApiHost").textContent = PUBLIC_ENDPOINT ? new URL(PUBLIC_ENDPOINT).host : "未配置";
+
+    $("copyEndpoint").addEventListener("click", async () => {
+      await navigator.clipboard.writeText(PUBLIC_ENDPOINT || FRONTEND_CONFIG.DEMO_API_ENDPOINT);
+      toast("publicEndpoint", "已复制调用地址");
+    });
+
+    $("getKey").addEventListener("click", issueKey);
+    if (isAdmin) {
+      $("adminPanel").classList.add("visible");
+      $("refreshStats").addEventListener("click", loadStats);
+      $("adminSendPrompt").addEventListener("click", () => sendPrompt($("adminPromptInput"), $("adminResultBox"), true));
+      $("adminPromptInput").addEventListener("keydown", handleEnter(() => sendPrompt($("adminPromptInput"), $("adminResultBox"), true)));
+      document.querySelectorAll(".sample-chip").forEach((button) => {
+        button.addEventListener("click", () => {
+          $("adminPromptInput").value = button.dataset.prompt || "";
+          $("adminPromptInput").focus();
+        });
+      });
+      loadStats();
+    }
+
+    issueKey();
+
+    function handleEnter(callback) {
+      return (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          callback();
+        }
+      };
+    }
+
+    async function issueKey() {
+      if (!HIDDEN_WORKER_BASE) {
+        state.apiKey = "sk-local-demo";
+        $("apiKeyBox").textContent = state.apiKey;
+        $("keyStatus").textContent = "请先在 FRONTEND_CONFIG.BACKEND_BASE 中配置后端地址。";
+        return;
+      }
+
+      $("keyStatus").textContent = "正在领取密钥...";
+      try {
+        const response = await fetch(`${HIDDEN_WORKER_BASE}/v1/client-key`, {
+          method: "GET",
+          headers: { "accept": "application/json" },
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "领取失败");
+        state.apiKey = data.apiKey;
+        $("apiKeyBox").textContent = state.apiKey;
+        $("keyStatus").textContent = "密钥已生成，可用于页面测试和OpenAI兼容请求。";
+      } catch (error) {
+        state.apiKey = "sk-local-demo";
+        $("apiKeyBox").textContent = state.apiKey;
+        $("keyStatus").textContent = "当前来源无法领取正式随机密钥，已使用本地测试密钥。";
+      }
+    }
+
+    async function sendPrompt(input, output, afterSendRefreshStats = false) {
+      if (!HIDDEN_WORKER_BASE) {
+        output.textContent = "请先配置 FRONTEND_CONFIG.BACKEND_BASE。";
+        return;
+      }
+
+      const prompt = input.value.trim();
+      if (!prompt) {
+        output.textContent = "请输入提示词。";
+        input.focus();
+        return;
+      }
+
+      output.textContent = "发送中...";
+      try {
+        const response = await fetch(`${HIDDEN_WORKER_BASE}/v1/chat/completions`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "authorization": `Bearer ${state.apiKey || "sk-local-demo"}`,
+          },
+          body: JSON.stringify({
+            model: MODEL_NAME,
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.3,
+          }),
+        });
+        const data = await response.json();
+        output.textContent = JSON.stringify(data, null, 2);
+        if (afterSendRefreshStats && isAdmin) loadStats();
+      } catch (error) {
+        output.textContent = `请求失败：${error.message}`;
+      }
+    }
+
+    async function loadStats() {
+      if (!HIDDEN_WORKER_BASE) {
+        $("recentTable").innerHTML = '<div class="empty">请先配置 FRONTEND_CONFIG.BACKEND_BASE。</div>';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${HIDDEN_WORKER_BASE}/admin/stats`, {
+          headers: { "x-admin-token": ADMIN_TOKEN },
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "统计读取失败");
+        state.stats = data;
+        renderStats(data);
+      } catch (error) {
+        $("recentTable").innerHTML = `<div class="empty">统计读取失败：${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    function renderStats(data) {
+      $("mTotal").textContent = data.totalRequests || 0;
+      $("mChat").textContent = data.chatRequests || 0;
+      $("mKeys").textContent = data.keyIssued || 0;
+      $("mLatency").textContent = `${data.averageLatencyMs || 0}ms`;
+      $("trendBadge").textContent = `${sum(data.byDay.map((item) => item.requests))} / 7d`;
+
+      drawLineChart($("trendChart"), data.byDay.map((item) => item.day.slice(5)), data.byDay.map((item) => item.requests), {
+        stroke: "#2563eb",
+        fill: "rgba(37, 99, 235, .12)",
+      });
+      drawDonutChart($("intentChart"), data.byIntent.slice(0, 6));
+      drawBarChart($("modelChart"), data.byModel.slice(0, 6));
+      renderRecent(data.recent || []);
+    }
+
+    function drawLineChart(canvas, labels, values, options) {
+      const ctx = setupCanvas(canvas);
+      const width = canvas.width;
+      const height = canvas.height;
+      const pad = 38;
+      const max = Math.max(1, ...values);
+
+      ctx.clearRect(0, 0, width, height);
+      drawGrid(ctx, width, height, pad);
+
+      const points = values.map((value, index) => ({
+        x: pad + (index * (width - pad * 2)) / Math.max(1, values.length - 1),
+        y: height - pad - (value / max) * (height - pad * 2),
+      }));
+
+      ctx.beginPath();
+      points.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
+      ctx.strokeStyle = options.stroke;
+      ctx.lineWidth = 4;
+      ctx.lineJoin = "round";
+      ctx.stroke();
+
+      ctx.lineTo(width - pad, height - pad);
+      ctx.lineTo(pad, height - pad);
+      ctx.closePath();
+      ctx.fillStyle = options.fill;
+      ctx.fill();
+
+      points.forEach((point, index) => {
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = options.stroke;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#647383";
+        ctx.font = "12px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(labels[index], point.x, height - 12);
+      });
+    }
+
+    function drawBarChart(canvas, series) {
+      const ctx = setupCanvas(canvas);
+      const width = canvas.width;
+      const height = canvas.height;
+      const pad = 38;
+      const values = series.length ? series : [{ name: "gpt 6.7", value: 0 }];
+      const max = Math.max(1, ...values.map((item) => item.value));
+      const barSpace = (width - pad * 2) / values.length;
+
+      ctx.clearRect(0, 0, width, height);
+      drawGrid(ctx, width, height, pad);
+
+      values.forEach((item, index) => {
+        const barWidth = Math.min(58, barSpace * .58);
+        const x = pad + index * barSpace + (barSpace - barWidth) / 2;
+        const barHeight = (item.value / max) * (height - pad * 2);
+        const y = height - pad - barHeight;
+        const gradient = ctx.createLinearGradient(0, y, 0, height - pad);
+        gradient.addColorStop(0, "#0f9f8f");
+        gradient.addColorStop(1, "#2563eb");
+        ctx.fillStyle = gradient;
+        roundRect(ctx, x, y, barWidth, Math.max(4, barHeight), 7);
+        ctx.fill();
+        ctx.fillStyle = "#14202b";
+        ctx.font = "700 13px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(item.value, x + barWidth / 2, y - 8);
+        ctx.fillStyle = "#647383";
+        ctx.font = "12px Inter, sans-serif";
+        ctx.fillText(trimLabel(item.name, 10), x + barWidth / 2, height - 12);
+      });
+    }
+
+    function drawDonutChart(canvas, series) {
+      const ctx = setupCanvas(canvas);
+      const width = canvas.width;
+      const height = canvas.height;
+      const data = series.length ? series : [{ name: "none", value: 1 }];
+      const total = Math.max(1, sum(data.map((item) => item.value)));
+      const colors = ["#2563eb", "#0f9f8f", "#d97706", "#e11d48", "#475569", "#7c3aed"];
+      const cx = width * .43;
+      const cy = height * .48;
+      const radius = Math.min(width, height) * .31;
+      let angle = -Math.PI / 2;
+
+      ctx.clearRect(0, 0, width, height);
+      data.forEach((item, index) => {
+        const slice = (item.value / total) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, angle, angle + slice);
+        ctx.closePath();
+        ctx.fillStyle = colors[index % colors.length];
+        ctx.fill();
+        angle += slice;
+      });
+
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * .58, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = "source-over";
+
+      ctx.fillStyle = "#14202b";
+      ctx.font = "800 28px Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(String(total), cx, cy + 8);
+
+      data.slice(0, 5).forEach((item, index) => {
+        const y = 72 + index * 34;
+        ctx.fillStyle = colors[index % colors.length];
+        roundRect(ctx, width * .72, y - 12, 14, 14, 4);
+        ctx.fill();
+        ctx.fillStyle = "#14202b";
+        ctx.font = "13px Inter, sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(trimLabel(item.name, 12), width * .72 + 22, y);
+        ctx.fillStyle = "#647383";
+        ctx.fillText(String(item.value), width * .72 + 22, y + 15);
+      });
+    }
+
+    function drawGrid(ctx, width, height, pad) {
+      ctx.strokeStyle = "#e5eaf0";
+      ctx.lineWidth = 1;
+      ctx.font = "12px Inter, sans-serif";
+      for (let i = 0; i <= 4; i += 1) {
+        const y = pad + i * ((height - pad * 2) / 4);
+        ctx.beginPath();
+        ctx.moveTo(pad, y);
+        ctx.lineTo(width - pad, y);
+        ctx.stroke();
+      }
+    }
+
+    function setupCanvas(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(320, Math.round(rect.width));
+      const height = Math.max(220, Math.round(rect.height));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      return canvas.getContext("2d");
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + width, y, x + width, y + height, r);
+      ctx.arcTo(x + width, y + height, x, y + height, r);
+      ctx.arcTo(x, y + height, x, y, r);
+      ctx.arcTo(x, y, x + width, y, r);
+      ctx.closePath();
+    }
+
+    function renderRecent(recent) {
+      if (!recent.length) {
+        $("recentTable").innerHTML = '<div class="empty">暂无请求记录</div>';
+        return;
+      }
+
+      $("recentTable").innerHTML = `
+        <table>
+          <thead><tr><th>时间</th><th>路由</th><th>状态</th><th>延迟</th><th>意图</th></tr></thead>
+          <tbody>
+            ${recent.map((item) => `
+              <tr>
+                <td>${escapeHtml(new Date(item.at).toLocaleString())}</td>
+                <td>${escapeHtml(item.route)}</td>
+                <td>${escapeHtml(String(item.status))}</td>
+                <td>${escapeHtml(String(item.latency))}ms</td>
+                <td>${escapeHtml(item.intent || "")}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function toast(id, text) {
+      const node = $(id);
+      const old = node.textContent;
+      node.textContent = text;
+      setTimeout(() => { node.textContent = old; }, 1100);
+    }
+
+    function sum(values) {
+      return values.reduce((total, value) => total + Number(value || 0), 0);
+    }
+
+    function trimLabel(value, max) {
+      const text = String(value || "");
+      return text.length > max ? `${text.slice(0, max - 1)}...` : text;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    window.addEventListener("resize", () => {
+      if (state.stats) renderStats(state.stats);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+﻿name = "fake-api-openai-compatible"
+main = "src/index.js"
+compatibility_date = "2026-05-31"
+
+[vars]
+PUBLIC_API_BASE = ""
+HIDDEN_WORKER_BASE = ""
+ALLOWED_FRONTEND_ORIGINS = ""
+ADMIN_TOKEN = "admin"
+MODEL_VENDOR = "0penAI"
+MODEL_NAME = "gpt 6.7"
+DEMO_API_BASE = "https://api.circleestops.ccwu.cc"
+
+# Bind both custom domains/routes to this Worker in the Cloudflare dashboard:
+# - your-worker-domain/*
+# - your-api-domain/*
